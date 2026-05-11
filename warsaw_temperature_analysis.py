@@ -412,33 +412,119 @@ def _(mo, month_data, month_sel, np, plt):
     if month_data is not None:
         plt.close("all")
         _fig, _ax = plt.subplots(figsize=(12, 5))
-    
+
         years = month_data["year"]
-    
+
         # Average — circle markers + regression line
         _m_avg, _b = np.polyfit(years, month_data["avg_temp"], 1)
         _ax.scatter(years, month_data["avg_temp"], color="#2a9d8f", s=30, zorder=3,
                     label=f"Mean ({_m_avg * 10:+.2f} °C/decade)")
         _ax.plot(years, np.polyval([_m_avg, _b], years),
                  color="#2a9d8f", linewidth=2, zorder=2)
-    
+
         # Maximum — square markers + regression line
         _m_max, _b = np.polyfit(years, month_data["max_temp"], 1)
         _ax.scatter(years, month_data["max_temp"], color="#e76f51", s=30, marker="s",
                     zorder=3, label=f"Maximum ({_m_max * 10:+.2f} °C/decade)")
         _ax.plot(years, np.polyval([_m_max, _b], years),
                  color="#e76f51", linewidth=2, zorder=2)
-    
+
         # Minimum — triangle markers + regression line
         _m_min, _b = np.polyfit(years, month_data["min_temp"], 1)
         _ax.scatter(years, month_data["min_temp"], color="#457b9d", s=30, marker="v",
                     zorder=3, label=f"Minimum ({_m_min * 10:+.2f} °C/decade)")
         _ax.plot(years, np.polyval([_m_min, _b], years),
                  color="#457b9d", linewidth=2, zorder=2)
-    
+
         _ax.set_xlabel("Year")
         _ax.set_ylabel("Temperature (°C)")
         _ax.set_title(f"Monthly Temperatures in {month_sel.value} — Warsaw (2001–present)")
+        _ax.legend()
+        _ax.grid(alpha=0.3)
+        _fig.tight_layout()
+        _out = _fig
+    _out
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Step 6: Seasonal warming rates
+
+    **Goal:** Group the data by meteorological season (spring: Mar–May, summer: Jun–Aug,
+    autumn: Sep–Nov, winter: Dec–Feb) and compute the average temperature per season
+    per year. Plot each season's yearly average with a linear regression trend line
+    to see which seasons are warming fastest.
+
+    **Note on winter:** December belongs to the winter of the *following* year (e.g.
+    December 2005 is grouped with January–February 2006). The SQL uses a `CASE WHEN`
+    expression to reassign months to their meteorological year.
+
+    **Expected output:** A table with columns `year`, `season`, `avg_temp`,
+    one row per season per year (max 4 per year), sorted by year then season.
+
+    **SQL concepts:** `CASE WHEN` for conditional grouping, multi-column `GROUP BY`,
+    `month(date)` for season assignment.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    seasonal = mo.sql(
+        f"""
+        -- write SQL query here
+        """
+    )
+    return (seasonal,)
+
+
+@app.cell
+def _(mo, np, plt, seasonal):
+    _out = mo.md("*(Write the SQL query in the cell above to see the plot here.)*")
+    if seasonal is not None:
+        plt.close("all")
+        _fig, _ax = plt.subplots(figsize=(12, 5))
+    
+        # Exclude current incomplete year from trends
+        _last_year = seasonal["year"].max()
+        _complete = seasonal.filter(seasonal["year"] < _last_year)
+    
+        _colors = {
+            "spring": "#2a9d8f",
+            "summer": "#e76f51",
+            "autumn": "#e9c46a",
+            "winter": "#457b9d",
+        }
+    
+        for _season in ["spring", "summer", "autumn", "winter"]:
+            _s = seasonal.filter(seasonal["season"] == _season)
+            _sc = _complete.filter(_complete["season"] == _season)
+    
+            if len(_sc) < 2:
+                continue
+    
+            _m, _b = np.polyfit(_sc["year"], _sc["avg_temp"], 1)
+    
+            _marker = {"spring": "o", "summer": "s", "autumn": "^", "winter": "v"}[_season]
+    
+            _ax.scatter(
+                _s["year"], _s["avg_temp"],
+                color=_colors[_season], s=18, marker=_marker, zorder=3,
+                label=f"{_season.capitalize()} ({_m * 10:+.2f} °C/decade)",
+            )
+            _ax.plot(
+                _sc["year"], np.polyval([_m, _b], _sc["year"]),
+                color=_colors[_season], linewidth=2, zorder=2,
+            )
+    
+        _ax.set_xlabel("Year")
+        _ax.set_ylabel("Average temperature (°C)")
+        _ax.set_title(
+            "Seasonal Average Temperature Trends — Warsaw "
+            f"(linear fits exclude incomplete {_last_year} season)"
+        )
         _ax.legend()
         _ax.grid(alpha=0.3)
         _fig.tight_layout()
