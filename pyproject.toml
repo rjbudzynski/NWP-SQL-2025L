@@ -1,0 +1,10 @@
+[project]
+name = "nwp-sql-2025l"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "marimo[recommended]>=0.23.5",
+    "matplotlib>=3.10.9",
+]
