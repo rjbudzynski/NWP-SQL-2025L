@@ -8,10 +8,10 @@ app = marimo.App(width="medium")
 def imports():
     import marimo as mo
     import numpy as np
-    import pandas as pd
+    import polars as pl
     import matplotlib.pyplot as plt
 
-    return mo, np, pd, plt
+    return mo, np, pl, plt
 
 
 @app.cell(hide_code=True)
@@ -162,16 +162,16 @@ def one_definition(mo):
 
 
 @app.cell(hide_code=True)
-def one_definition_demo(mo, pd):
-    _df = pd.DataFrame({"a": [1, 2, 3]})
-    _df["b"] = _df["a"] * 2
+def one_definition_demo(mo, pl):
+    _df = pl.DataFrame({"a": [1, 2, 3]})
+    _df = _df.with_columns(b=pl.col("a") * 2)
     mo.md(
         f"""
         **Good pattern** — all operations in the defining cell, prefixed with `_`:
 
         ```
-        _df = pd.DataFrame({{"a": [1, 2, 3]}})
-        _df["b"] = _df["a"] * 2
+        _df = pl.DataFrame({{"a": [1, 2, 3]}})
+        _df = _df.with_columns(b=pl.col("a") * 2)
         ```
 
         | a | b |
@@ -211,8 +211,8 @@ def last_expression(mo):
 
 
 @app.cell
-def describe_demo(pd):
-    _df = pd.DataFrame({"a": [4, 5, 6], "b": [7, 8, 9]})
+def describe_demo(pl):
+    _df = pl.DataFrame({"a": [4, 5, 6], "b": [7, 8, 9]})
     _df.describe()
     return
 
@@ -345,8 +345,8 @@ def sql_intro(mo):
 
 
 @app.cell
-def sql_data(pd):
-    cities = pd.DataFrame({
+def sql_data(pl):
+    cities = pl.DataFrame({
         "city": ["Warsaw", "Kraków", "Gdańsk", "Wrocław", "Poznań"],
         "population_m": [1.8, 0.8, 0.5, 0.6, 0.5],
         "voivodeship": ["mazowieckie", "małopolskie", "pomorskie", "dolnośląskie", "wielkopolskie"],
@@ -509,8 +509,8 @@ def exercises(mo):
 
     **Cell 1** — define some sample data:
     ```python
-    import pandas as pd
-    inventory = pd.DataFrame({
+    import polars as pl
+    inventory = pl.DataFrame({
         "product": ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"],
         "category": ["A", "B", "A", "B", "A"],
         "price": [10, 25, 15, 30, 20],
